@@ -25,8 +25,6 @@ class SpaceScene: SKScene {
         // Background color
         backgroundColor = SKColor.black
         
-        // Set up physics
-        
         // Add background
         addBackground()
         
@@ -38,13 +36,19 @@ class SpaceScene: SKScene {
         
         // Add spaceman
         addSpaceMan()
+        
+        // Set up physics
+        setupPhysics()
+        setUpPlanetPhysics()
     }
 
     // Touch events
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         
-        for t in touches { self.touchDown(atPoint: t.location(in: self)) }
+        for touch in touches {
+            self.touchDown(atPoint: touch.location(in: self))
+        }
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -63,8 +67,25 @@ class SpaceScene: SKScene {
 private typealias TouchHandler = SpaceScene
 fileprivate extension TouchHandler {
     
+    enum ScreenSide {
+        case left, right
+    }
+    
+    // Move the spaceman relative to our touch position
     fileprivate func touchDown(atPoint pos : CGPoint) {
         
+        let currentSpacemanPosition = spaceman.position
+        
+        // Our spaceman always moves up, either to the left or right
+        switch touchScreenSide(forPosition: pos) {
+        case .left:
+            let newPosition = CGPoint(x: currentSpacemanPosition.x + 1, y: currentSpacemanPosition.y + 1)
+            spaceman.position = newPosition
+            
+        case .right:
+            let newPosition = CGPoint(x: currentSpacemanPosition.x - 1, y: currentSpacemanPosition.y + 1)
+            spaceman.position = newPosition
+        }
     }
     
     fileprivate func touchMoved(toPoint pos : CGPoint) {
@@ -74,14 +95,36 @@ fileprivate extension TouchHandler {
     fileprivate func touchUp(atPoint pos : CGPoint) {
         
     }
+    
+    fileprivate func touchScreenSide(forPosition position: CGPoint) -> ScreenSide {
+        
+        if position.x > size.width/2 {
+            return ScreenSide.right
+        } else {
+            return ScreenSide.left
+        }
+    }
 }
 
 private typealias SceneCreator = SpaceScene
 fileprivate extension SceneCreator {
     
     fileprivate func setupPhysics() {
-        physicsWorld.gravity = CGVector(dx: 0.0, dy: -9.8)
-        physicsWorld.speed = 0.2
+        physicsWorld.gravity = CGVector(dx: 0.0, dy: 0.8)
+    }
+    
+    fileprivate func setUpPlanetPhysics() {
+        
+        // Create a radial gravity field
+        let planetPhysicsField = SKFieldNode.radialGravityField()
+        planetPhysicsField.strength = 0.2
+        planetPhysicsField.falloff = -0.2
+        planetPhysicsField.categoryBitMask = Constants.PhysicsCategories.gravityCategory
+        
+        // Add to planet
+        planet.addChild(planetPhysicsField)
+        
+        spaceman.physicsBody?.fieldBitMask = Constants.PhysicsCategories.gravityCategory
     }
     
     fileprivate func addBackground() {
@@ -122,14 +165,14 @@ fileprivate extension SceneCreator {
     
     fileprivate func addSpaceMan() {
         
-        let spaceManStartPosition = CGPoint(x: size.width/2, y: size.height - 80)
+        let spaceManStartPosition = CGPoint(x: size.width/2, y:  size.height - 80)
         spaceman.position = spaceManStartPosition
         
         spaceman.zPosition = Constants.Layer.spaceman
         spaceman.size = CGSize(width: 40, height: 40)
         
-        // Add physics
         spaceman.physicsBody = SKPhysicsBody(texture: SKTexture(imageNamed: ImageAsset.spaceman.rawValue), size: spaceman.size)
+        spaceman.physicsBody?.affectedByGravity = false
         
         addChild(spaceman)
     }

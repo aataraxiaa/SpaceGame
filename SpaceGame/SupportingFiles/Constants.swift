@@ -13,6 +13,10 @@ struct Constants {
     struct Layer {
         static let background: CGFloat = 0
         static let planet: CGFloat = 1
-        static let spaceman: CGFloat = 1
+        static let spaceman: CGFloat = 2
+    }
+    
+    struct PhysicsCategories {
+        static let gravityCategory: UInt32 = 0x1 << 0
     }
 }
